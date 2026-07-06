@@ -130,6 +130,11 @@
   <!-- หน้าค้นหาสมาชิก -->
   <div id="screen-search" class="screen">
     <div class="panel">
+      <div class="panel-head">รอยืนยันสิทธิ์ <span id="pending-count" style="font-weight:300;font-size:13px;color:var(--muted)"></span></div>
+      <div id="pending-list"></div>
+      <button class="btn btn-ghost" onclick="loadPending()" style="margin-top:10px">รีเฟรชรายการ</button>
+    </div>
+    <div class="panel">
       <div class="panel-head">ค้นหาสมาชิก</div>
       <div class="msg msg-error" id="search-error"></div>
       <label for="search-keyword">เบอร์โทร / รหัสสมาชิก / ชื่อจริง</label>
@@ -208,7 +213,7 @@
 // ============================================================
 // ตั้งค่า (แก้บรรทัดนี้ก่อนใช้งาน — ใช้ URL เดียวกับ index.html)
 // ============================================================
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbxLS6whYCUq_t5ceGjAoeC1DCy3JcuWlTbal0yjF4TUQJjodlhGQM4XPaCjR3FcM0-iuQ/exec';
+const GAS_URL = 'ใส่_URL_Apps_Script_ที่นี่';
 
 let password = '';        // เก็บในหน่วยความจำระหว่างเปิดหน้าเท่านั้น ปิดหน้าแล้วต้องใส่ใหม่
 let currentMember = null; // สมาชิกที่กำลังยืนยัน
@@ -251,23 +256,61 @@ function showMsg(id, text) {
 function hideMsg(id) { document.getElementById(id).style.display = 'none'; }
 
 // ---------- เข้าสู่ระบบ ----------
-// ตรวจรหัสผ่านกับฝั่ง Apps Script จริง (ลองค้นหาคำทดสอบ 1 ครั้ง)
+// ตรวจรหัสผ่านกับฝั่ง Apps Script พร้อมดึงรายการรอยืนยันมาแสดงทันทีในครั้งเดียว
 async function doLogin() {
   hideMsg('login-error');
   const pw = document.getElementById('login-password').value.trim();
   if (!pw) { showMsg('login-error', 'กรุณากรอกรหัสผ่าน'); return; }
 
   try {
-    const res = await callApi({ action: 'searchMember', password: pw, keyword: 'PU' });
-    if (res.success === false && res.message === 'รหัสผ่านไม่ถูกต้อง') {
-      showMsg('login-error', 'รหัสผ่านไม่ถูกต้อง');
+    const res = await callApi({ action: 'pendingList', password: pw });
+    if (!res.success) {
+      showMsg('login-error', res.message || 'เข้าสู่ระบบไม่สำเร็จ กรุณาลองใหม่');
       return;
     }
     password = pw;
+    renderPending(res.results);
     showScreen('screen-search');
   } catch (err) {
     showMsg('login-error', err.message);
   }
+}
+
+// ---------- รายการรอยืนยัน ----------
+async function loadPending() {
+  try {
+    const res = await callApi({ action: 'pendingList', password: password });
+    if (res.success) renderPending(res.results);
+  } catch (err) { /* โหลดไม่ได้ก็ยังใช้ช่องค้นหาแทนได้ */ }
+}
+
+function renderPending(results) {
+  document.getElementById('pending-count').textContent = results.length + ' รายการ';
+  renderList(
+    document.getElementById('pending-list'),
+    results,
+    'ไม่มีรายการรอยืนยัน สมาชิกทุกคนได้รับการยืนยันครบแล้ว'
+  );
+}
+
+// ---------- แสดงรายชื่อสมาชิก (ใช้ร่วมกันทั้งรายการรอยืนยันและผลค้นหา) ----------
+function renderList(listEl, results, emptyText) {
+  listEl.innerHTML = '';
+  if (results.length === 0) {
+    listEl.innerHTML = '<div style="font-size:13.5px;color:var(--muted);padding:8px 4px">' + emptyText + '</div>';
+    return;
+  }
+  results.forEach(m => {
+    const item = document.createElement('div');
+    item.className = 'result-item';
+    const isOk = m.status === 'ยืนยันแล้ว';
+    item.innerHTML =
+      '<div><div class="r-name">' + escapeHtml(m.realName) + '</div>' +
+      '<div class="r-detail">' + escapeHtml(m.memberId) + ' · ' + escapeHtml(m.phone) + ' · ' + escapeHtml(m.types) + '</div></div>' +
+      '<div class="r-status ' + (isOk ? 'r-ok' : 'r-wait') + '">' + escapeHtml(m.status) + '</div>';
+    item.onclick = () => openConfirm(m);
+    listEl.appendChild(item);
+  });
 }
 
 // ---------- ค้นหาสมาชิก ----------
@@ -283,27 +326,13 @@ async function doSearch() {
     const res = await callApi({ action: 'searchMember', password: password, keyword: keyword });
     if (!res.success) { showMsg('search-error', res.message); return; }
 
-    const list = document.getElementById('result-list');
-    list.innerHTML = '';
     document.getElementById('result-count').textContent = 'พบ ' + res.results.length + ' รายการ';
     document.getElementById('result-panel').style.display = 'block';
-
-    if (res.results.length === 0) {
-      list.innerHTML = '<div style="font-size:13.5px;color:var(--muted);padding:8px 4px">ไม่พบสมาชิกที่ตรงกับคำค้นหา ลองค้นด้วยเบอร์โทรเต็ม 10 หลัก</div>';
-      return;
-    }
-
-    res.results.forEach(m => {
-      const item = document.createElement('div');
-      item.className = 'result-item';
-      const isOk = m.status === 'ยืนยันแล้ว';
-      item.innerHTML =
-        '<div><div class="r-name">' + escapeHtml(m.realName) + '</div>' +
-        '<div class="r-detail">' + escapeHtml(m.memberId) + ' · ' + escapeHtml(m.phone) + ' · ' + escapeHtml(m.types) + '</div></div>' +
-        '<div class="r-status ' + (isOk ? 'r-ok' : 'r-wait') + '">' + escapeHtml(m.status) + '</div>';
-      item.onclick = () => openConfirm(m);
-      list.appendChild(item);
-    });
+    renderList(
+      document.getElementById('result-list'),
+      res.results,
+      'ไม่พบสมาชิกที่ตรงกับคำค้นหา ลองค้นด้วยเบอร์โทรเต็ม 10 หลัก'
+    );
   } catch (err) {
     showMsg('search-error', err.message);
   } finally {
@@ -442,6 +471,7 @@ async function doConfirm() {
       okMsg += ' แจ้งลูกค้ากดรีเฟรชบัตรได้เลย';
       showMsg('confirm-ok', okMsg);
       currentMember = res.member;
+      loadPending(); // อัปเดตรายการรอยืนยัน ให้ชื่อที่เพิ่งยืนยันหายไปจากคิว
     } else {
       showMsg('confirm-error', res.message || 'บันทึกไม่สำเร็จ');
     }
