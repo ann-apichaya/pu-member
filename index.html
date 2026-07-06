@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>PU Member - Phitsanulok United</title>
+<script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --purple-900: #2a1650;
+    --purple-700: #47257f;
+    --purple-500: #6a3cb0;
+    --gold: #d9a800;
+    --gold-light: #ffd95c;
+    --cream: #f7f4fb;
+    --ink: #1c2430;
+    --muted: #6b7686;
+    --green: #1e8a5a;
+    --amber: #b97a1e;
+    --red: #c0392b;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Prompt', sans-serif;
+    background: var(--cream);
+    color: var(--ink);
+    min-height: 100vh;
+  }
+
+  /* ---------- แถบหัว ---------- */
+  .topbar {
+    background: var(--purple-900);
+    color: #fff;
+    padding: 14px 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .topbar .mark {
+    width: 38px; height: 38px;
+    border-radius: 50%;
+    background: #fff;
+    object-fit: cover;
+  }
+  .topbar .title { font-size: 15px; font-weight: 600; letter-spacing: 0.3px; }
+  .topbar .sub { font-size: 11px; font-weight: 300; color: #cabfe0; }
+
+  .wrap { max-width: 460px; margin: 0 auto; padding: 20px 16px 40px; }
+
+  .screen { display: none; }
+  .screen.active { display: block; }
+
+  /* ---------- หน้ากำลังโหลด / ผิดพลาด ---------- */
+  .center-box { text-align: center; padding: 70px 20px; }
+  .spinner {
+    width: 42px; height: 42px;
+    border: 4px solid #ddd5ec;
+    border-top-color: var(--purple-700);
+    border-radius: 50%;
+    margin: 0 auto 18px;
+    animation: spin 0.9s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .center-box p { color: var(--muted); font-size: 14px; }
+  .error-text { color: var(--red); font-size: 14px; line-height: 1.7; }
+
+  /* ---------- ฟอร์มสมัคร ---------- */
+  .card-panel {
+    background: #fff;
+    border-radius: 14px;
+    padding: 24px 20px;
+    box-shadow: 0 2px 14px rgba(42,22,80,0.08);
+  }
+  .welcome { display: flex; align-items: center; gap: 14px; margin-bottom: 20px; }
+  .welcome img {
+    width: 56px; height: 56px; border-radius: 50%;
+    border: 2px solid var(--gold);
+    object-fit: cover;
+  }
+  .welcome .hello { font-size: 13px; color: var(--muted); }
+  .welcome .name { font-size: 17px; font-weight: 600; }
+
+  .form-head { font-size: 18px; font-weight: 600; color: var(--purple-900); margin-bottom: 4px; }
+  .form-sub { font-size: 13px; color: var(--muted); margin-bottom: 20px; line-height: 1.6; }
+
+  label { display: block; font-size: 13px; font-weight: 500; margin-bottom: 6px; color: var(--purple-700); }
+  input[type="text"], input[type="tel"] {
+    width: 100%;
+    padding: 12px 14px;
+    font-family: 'Prompt', sans-serif;
+    font-size: 16px;
+    border: 1.5px solid #d5cde6;
+    border-radius: 10px;
+    margin-bottom: 16px;
+    background: #fcfbfe;
+  }
+  input:focus { outline: none; border-color: var(--purple-500); }
+
+  .btn {
+    width: 100%;
+    padding: 14px;
+    font-family: 'Prompt', sans-serif;
+    font-size: 16px;
+    font-weight: 600;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+  }
+  .btn-primary { background: var(--purple-700); color: #fff; }
+  .btn-primary:active { background: var(--purple-900); }
+  .btn-primary:disabled { background: #a99cc4; }
+  .btn-ghost {
+    background: transparent;
+    color: var(--purple-700);
+    border: 1.5px solid var(--purple-700);
+    margin-top: 12px;
+  }
+  .form-error {
+    display: none;
+    background: #fdeeec;
+    color: var(--red);
+    font-size: 13px;
+    padding: 10px 14px;
+    border-radius: 8px;
+    margin-bottom: 14px;
+    line-height: 1.6;
+  }
+
+  /* ---------- บัตรสมาชิก (จุดเด่นของหน้า) ---------- */
+  .member-card {
+    position: relative;
+    border-radius: 18px;
+    padding: 24px 22px 20px;
+    color: #fff;
+    background:
+      radial-gradient(circle at 85% -20%, rgba(242,197,0,0.35), transparent 55%),
+      linear-gradient(135deg, var(--purple-900) 0%, var(--purple-700) 60%, var(--purple-500) 100%);
+    box-shadow: 0 10px 26px rgba(42,22,80,0.35);
+    overflow: hidden;
+  }
+  .member-card::after {
+    /* เส้นสนามกีฬาจาง ๆ เป็นลายพื้นบัตร */
+    content: '';
+    position: absolute;
+    right: -60px; bottom: -90px;
+    width: 240px; height: 240px;
+    border: 1.5px solid rgba(255,255,255,0.12);
+    border-radius: 50%;
+    pointer-events: none;
+  }
+  .member-card::before {
+    content: '';
+    position: absolute;
+    right: 20px; bottom: -170px;
+    width: 240px; height: 240px;
+    border: 1.5px solid rgba(255,255,255,0.08);
+    border-radius: 50%;
+    pointer-events: none;
+  }
+  .card-brand {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 22px;
+  }
+  .card-brand .org { font-size: 12px; letter-spacing: 2px; color: var(--gold-light); font-weight: 500; }
+  .card-brand .chip {
+    font-size: 10px; letter-spacing: 1px;
+    border: 1px solid rgba(255,255,255,0.35);
+    padding: 3px 10px; border-radius: 20px;
+    color: #dfe6f2;
+  }
+  .card-holder { display: flex; align-items: center; gap: 14px; margin-bottom: 20px; }
+  .card-holder img {
+    width: 62px; height: 62px; border-radius: 50%;
+    border: 2px solid var(--gold);
+    object-fit: cover;
+    background: var(--purple-500);
+  }
+  .card-holder .h-name { font-size: 19px; font-weight: 600; line-height: 1.3; }
+  .card-holder .h-id {
+    font-size: 13px; color: var(--gold-light);
+    letter-spacing: 2.5px; font-weight: 500; margin-top: 2px;
+  }
+  .type-row { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 18px; }
+  .type-badge {
+    font-size: 12px;
+    background: rgba(242,197,0,0.18);
+    border: 1px solid rgba(242,197,0,0.55);
+    color: var(--gold-light);
+    padding: 4px 12px;
+    border-radius: 20px;
+  }
+  .type-badge.expired {
+    background: rgba(255,255,255,0.08);
+    border-color: rgba(255,255,255,0.25);
+    color: #b9b2cc;
+  }
+  .fitness-note {
+    font-size: 12px;
+    color: #cabfe0;
+    margin: -10px 0 16px;
+    line-height: 1.8;
+  }
+  .fitness-note.expired { color: #ff9d8a; }
+  .card-foot {
+    display: flex; justify-content: space-between; align-items: flex-end;
+    border-top: 1px solid rgba(255,255,255,0.15);
+    padding-top: 14px;
+  }
+  .foot-item .f-label { font-size: 10px; color: #a9b6ca; letter-spacing: 1px; margin-bottom: 2px; }
+  .foot-item .f-value { font-size: 14px; font-weight: 500; }
+  .status-pill {
+    font-size: 12px; font-weight: 500;
+    padding: 5px 14px; border-radius: 20px;
+  }
+  .status-wait { background: rgba(255,205,80,0.2); color: #f0c878; border: 1px solid rgba(255,205,80,0.5); }
+  .status-ok { background: rgba(80,200,140,0.18); color: #7fe0b0; border: 1px solid rgba(80,200,140,0.45); }
+
+  .hint-box {
+    margin-top: 16px;
+    background: #fff;
+    border-left: 4px solid var(--amber);
+    border-radius: 10px;
+    padding: 14px 16px;
+    font-size: 13px;
+    color: var(--ink);
+    line-height: 1.7;
+    box-shadow: 0 2px 10px rgba(42,22,80,0.06);
+  }
+  .hint-box.ok { border-left-color: var(--green); }
+  .hint-box b { color: var(--purple-900); }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <img class="mark" src="logo.png" alt="Phitsanulok United">
+  <div>
+    <div class="title">PU Member</div>
+    <div class="sub">Phitsanulok United</div>
+  </div>
+</div>
+
+<div class="wrap">
+
+  <!-- หน้ากำลังโหลด -->
+  <div id="screen-loading" class="screen active">
+    <div class="center-box">
+      <div class="spinner"></div>
+      <p>กำลังเชื่อมต่อระบบสมาชิก...</p>
+    </div>
+  </div>
+
+  <!-- หน้าแจ้งข้อผิดพลาด -->
+  <div id="screen-error" class="screen">
+    <div class="center-box">
+      <p class="error-text" id="error-message">เกิดข้อผิดพลาด</p>
+      <button class="btn btn-ghost" style="max-width:220px" onclick="location.reload()">ลองใหม่อีกครั้ง</button>
+    </div>
+  </div>
+
+  <!-- หน้าสมัครสมาชิก -->
+  <div id="screen-register" class="screen">
+    <div class="card-panel">
+      <div class="welcome">
+        <img id="reg-avatar" src="" alt="">
+        <div>
+          <div class="hello">สวัสดีคุณ</div>
+          <div class="name" id="reg-display-name">-</div>
+        </div>
+      </div>
+      <div class="form-head">สมัครสมาชิก PU Member</div>
+      <div class="form-sub">กรอกเพียง 2 ช่อง ใช้เวลาไม่ถึง 1 นาที รับสิทธิพิเศษจากทุกบริการในเครือ Phitsanulok United</div>
+      <div class="form-error" id="reg-error"></div>
+      <label for="reg-name">ชื่อ-นามสกุลจริง</label>
+      <input type="text" id="reg-name" placeholder="เช่น สมชาย ใจดี">
+      <label for="reg-phone">เบอร์โทรศัพท์</label>
+      <input type="tel" id="reg-phone" placeholder="เช่น 0812345678" maxlength="10" inputmode="numeric">
+      <button class="btn btn-primary" id="reg-submit" onclick="submitRegister()">สมัครสมาชิก</button>
+    </div>
+  </div>
+
+  <!-- หน้าบัตรสมาชิก -->
+  <div id="screen-card" class="screen">
+    <div class="member-card">
+      <div class="card-brand">
+        <div style="display:flex;align-items:center;gap:9px">
+          <img src="logo.png" alt="" style="width:32px;height:32px;border-radius:50%;background:#fff">
+          <div class="org">PHITSANULOK UNITED</div>
+        </div>
+        <div class="chip">MEMBER</div>
+      </div>
+      <div class="card-holder">
+        <img id="card-avatar" src="" alt="">
+        <div>
+          <div class="h-name" id="card-name">-</div>
+          <div class="h-id" id="card-id">-</div>
+        </div>
+      </div>
+      <div class="type-row" id="card-types"></div>
+      <div class="fitness-note" id="card-fitness" style="display:none"></div>
+      <div class="card-foot">
+        <div class="foot-item">
+          <div class="f-label">สมาชิกตั้งแต่</div>
+          <div class="f-value" id="card-join">-</div>
+        </div>
+        <div class="foot-item" style="text-align:center">
+          <div class="f-label">แต้มสะสม</div>
+          <div class="f-value" id="card-points">0</div>
+        </div>
+        <div class="status-pill" id="card-status">-</div>
+      </div>
+    </div>
+
+    <div class="hint-box" id="hint-wait">
+      <b>ขั้นตอนถัดไป:</b> แสดงบัตรนี้ให้พนักงาน ณ จุดบริการที่ท่านใช้ (โรงแรม ฟิตเนส หรืออคาเดมี)
+      เพื่อยืนยันประเภทสมาชิกและเปิดใช้สิทธิพิเศษของท่าน
+    </div>
+    <div class="hint-box ok" id="hint-ok" style="display:none">
+      ประเภทสมาชิกของท่านได้รับการยืนยันแล้ว แสดงบัตรนี้ทุกครั้งที่ใช้บริการเพื่อรับสิทธิพิเศษ
+    </div>
+
+    <button class="btn btn-ghost" onclick="refreshCard()">รีเฟรชข้อมูลบัตร</button>
+  </div>
+
+</div>
+
+<script>
+// ============================================================
+// ตั้งค่า (แก้ 2 บรรทัดนี้ก่อนใช้งาน)
+// ============================================================
+const LIFF_ID = 'ใส่_LIFF_ID_ที่นี่';
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbxLS6whYCUq_t5ceGjAoeC1DCy3JcuWlTbal0yjF4TUQJjodlhGQM4XPaCjR3FcM0-iuQ/exec';
+
+let profile = null;
+
+// ---------- ตัวช่วยเรียก Apps Script แบบ JSONP ----------
+function callApi(params) {
+  return new Promise((resolve, reject) => {
+    const cbName = 'cb_' + Date.now() + '_' + Math.floor(Math.random() * 100000);
+    const timer = setTimeout(() => {
+      cleanup();
+      reject(new Error('เชื่อมต่อระบบไม่ได้ กรุณาลองใหม่'));
+    }, 20000);
+
+    function cleanup() {
+      clearTimeout(timer);
+      delete window[cbName];
+      if (script.parentNode) script.parentNode.removeChild(script);
+    }
+
+    window[cbName] = (data) => { cleanup(); resolve(data); };
+
+    const qs = new URLSearchParams({ ...params, callback: cbName }).toString();
+    const script = document.createElement('script');
+    script.src = GAS_URL + '?' + qs;
+    script.onerror = () => { cleanup(); reject(new Error('เชื่อมต่อระบบไม่ได้ กรุณาลองใหม่')); };
+    document.body.appendChild(script);
+  });
+}
+
+// ---------- ตรวจวันหมดอายุ (รูปแบบ วว/ดด/ปปปป) ----------
+function isExpired(s) {
+  const p = String(s).split('/');
+  if (p.length !== 3) return false;
+  const d = new Date(parseInt(p[2], 10), parseInt(p[1], 10) - 1, parseInt(p[0], 10), 23, 59, 59);
+  return d < new Date();
+}
+
+// ---------- สลับหน้าจอ ----------
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+function showError(msg) {
+  document.getElementById('error-message').textContent = msg;
+  showScreen('screen-error');
+}
+
+// ---------- เริ่มต้น ----------
+async function init() {
+  try {
+    await liff.init({ liffId: LIFF_ID });
+    if (!liff.isLoggedIn()) {
+      liff.login();
+      return;
+    }
+    profile = await liff.getProfile();
+
+    const res = await callApi({ action: 'getMember', userId: profile.userId });
+    if (!res.success) { showError(res.message || 'เกิดข้อผิดพลาด'); return; }
+
+    if (res.found) {
+      renderCard(res.member);
+    } else {
+      document.getElementById('reg-avatar').src = profile.pictureUrl || '';
+      document.getElementById('reg-display-name').textContent = profile.displayName || '';
+      showScreen('screen-register');
+    }
+  } catch (err) {
+    showError('เปิดระบบไม่สำเร็จ: ' + err.message + '\nกรุณาเปิดลิงก์นี้ผ่านแอป LINE');
+  }
+}
+
+// ---------- สมัครสมาชิก ----------
+async function submitRegister() {
+  const name = document.getElementById('reg-name').value.trim();
+  const phone = document.getElementById('reg-phone').value.trim();
+  const errBox = document.getElementById('reg-error');
+  errBox.style.display = 'none';
+
+  if (!name) { errBox.textContent = 'กรุณากรอกชื่อ-นามสกุลจริง'; errBox.style.display = 'block'; return; }
+  if (!/^0[0-9]{9}$/.test(phone)) {
+    errBox.textContent = 'เบอร์โทรต้องเป็นตัวเลข 10 หลัก ขึ้นต้นด้วย 0';
+    errBox.style.display = 'block';
+    return;
+  }
+
+  const btn = document.getElementById('reg-submit');
+  btn.disabled = true;
+  btn.textContent = 'กำลังสมัคร...';
+
+  try {
+    const res = await callApi({
+      action: 'register',
+      userId: profile.userId,
+      displayName: profile.displayName || '',
+      realName: name,
+      phone: phone
+    });
+    if (res.success) {
+      renderCard(res.member);
+    } else {
+      errBox.textContent = res.message || 'สมัครไม่สำเร็จ กรุณาลองใหม่';
+      errBox.style.display = 'block';
+    }
+  } catch (err) {
+    errBox.textContent = err.message;
+    errBox.style.display = 'block';
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'สมัครสมาชิก';
+  }
+}
+
+// ---------- แสดงบัตรสมาชิก ----------
+function renderCard(m) {
+  document.getElementById('card-avatar').src = (profile && profile.pictureUrl) || '';
+  document.getElementById('card-name').textContent = m.realName || '-';
+  document.getElementById('card-id').textContent = m.memberId || '-';
+  document.getElementById('card-join').textContent = (m.joinDate || '').split(' ')[0] || '-';
+  document.getElementById('card-points').textContent = m.points || '0';
+
+  // ป้ายประเภทสมาชิก (คั่นด้วยเครื่องหมายจุลภาค)
+  const typeRow = document.getElementById('card-types');
+  typeRow.innerHTML = '';
+  const fitnessExpired = m.fitnessExpiry ? isExpired(m.fitnessExpiry) : false;
+  const academyExpired = m.academyExpiry ? isExpired(m.academyExpiry) : false;
+  String(m.types || 'ทั่วไป').split(',').forEach(t => {
+    t = t.trim();
+    const b = document.createElement('span');
+    b.className = 'type-badge';
+    if (t === 'สมาชิกฟิตเนส') {
+      // แสดงแพ็กเกจต่อท้าย เช่น "สมาชิกฟิตเนส รายปี" และเปลี่ยนเป็นสีเทาถ้าหมดอายุ
+      b.textContent = m.fitnessPackage ? 'สมาชิกฟิตเนส ' + m.fitnessPackage : t;
+      if (fitnessExpired) b.classList.add('expired');
+    } else if (t === 'ผู้ปกครองอคาเดมี') {
+      // หลักเดียวกับฟิตเนส เช่น "ผู้ปกครองอคาเดมี ราย 3 เดือน"
+      b.textContent = m.academyPackage ? 'ผู้ปกครองอคาเดมี ' + m.academyPackage : t;
+      if (academyExpired) b.classList.add('expired');
+    } else {
+      b.textContent = t;
+    }
+    typeRow.appendChild(b);
+  });
+
+  // บรรทัดแจ้งวันหมดอายุ (ฟิตเนสและอคาเดมี แสดงคนละบรรทัด)
+  const note = document.getElementById('card-fitness');
+  note.innerHTML = '';
+  const expiryItems = [];
+  if (m.fitnessExpiry) expiryItems.push({ label: 'ฟิตเนส', expiry: m.fitnessExpiry, expired: fitnessExpired });
+  if (m.academyExpiry) expiryItems.push({ label: 'อคาเดมี', expiry: m.academyExpiry, expired: academyExpired });
+  if (expiryItems.length > 0) {
+    expiryItems.forEach(it => {
+      const line = document.createElement('div');
+      line.textContent = it.expired
+        ? it.label + 'หมดอายุแล้ว (' + it.expiry + ') ติดต่อต่ออายุได้ที่เคาน์เตอร์'
+        : it.label + 'ใช้ได้ถึง ' + it.expiry;
+      if (it.expired) line.style.color = '#ff9d8a';
+      note.appendChild(line);
+    });
+    note.style.display = 'block';
+  } else {
+    note.style.display = 'none';
+  }
+
+  // สถานะยืนยัน
+  const pill = document.getElementById('card-status');
+  const isOk = m.status === 'ยืนยันแล้ว';
+  pill.textContent = m.status || 'รอยืนยัน';
+  pill.className = 'status-pill ' + (isOk ? 'status-ok' : 'status-wait');
+  document.getElementById('hint-wait').style.display = isOk ? 'none' : 'block';
+  document.getElementById('hint-ok').style.display = isOk ? 'block' : 'none';
+
+  showScreen('screen-card');
+}
+
+// ---------- รีเฟรชบัตร ----------
+async function refreshCard() {
+  showScreen('screen-loading');
+  try {
+    const res = await callApi({ action: 'getMember', userId: profile.userId });
+    if (res.success && res.found) renderCard(res.member);
+    else showError('ไม่พบข้อมูลสมาชิก');
+  } catch (err) {
+    showError(err.message);
+  }
+}
+
+init();
+</script>
+</body>
+</html>

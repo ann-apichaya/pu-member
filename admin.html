@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PU Member - หน้าพนักงาน</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --purple-900: #2a1650;
+    --purple-700: #47257f;
+    --purple-500: #6a3cb0;
+    --gold: #d9a800;
+    --cream: #f7f4fb;
+    --ink: #1c2430;
+    --muted: #6b7686;
+    --green: #1e8a5a;
+    --amber: #b97a1e;
+    --red: #c0392b;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Prompt', sans-serif; background: var(--cream); color: var(--ink); min-height: 100vh; }
+
+  .topbar {
+    background: var(--purple-900); color: #fff;
+    padding: 14px 20px; display: flex; align-items: center; gap: 10px;
+  }
+  .topbar .mark {
+    width: 38px; height: 38px; border-radius: 50%;
+    background: #fff; object-fit: cover;
+  }
+  .topbar .title { font-size: 15px; font-weight: 600; }
+  .topbar .sub { font-size: 11px; font-weight: 300; color: #cabfe0; }
+
+  .wrap { max-width: 520px; margin: 0 auto; padding: 20px 16px 40px; }
+  .screen { display: none; }
+  .screen.active { display: block; }
+
+  .panel {
+    background: #fff; border-radius: 14px; padding: 22px 20px;
+    box-shadow: 0 2px 14px rgba(42,22,80,0.08); margin-bottom: 16px;
+  }
+  .panel-head { font-size: 17px; font-weight: 600; color: var(--purple-900); margin-bottom: 14px; }
+
+  label { display: block; font-size: 13px; font-weight: 500; margin-bottom: 6px; color: var(--purple-700); }
+  input[type="text"], input[type="password"], input[type="tel"], input[type="date"], select {
+    width: 100%; padding: 12px 14px; font-family: 'Prompt', sans-serif; font-size: 16px;
+    border: 1.5px solid #d5cde6; border-radius: 10px; margin-bottom: 14px; background: #fcfbfe;
+  }
+  input:focus, select:focus { outline: none; border-color: var(--purple-500); }
+
+  .btn {
+    width: 100%; padding: 13px; font-family: 'Prompt', sans-serif; font-size: 15px;
+    font-weight: 600; border: none; border-radius: 10px; cursor: pointer;
+  }
+  .btn-primary { background: var(--purple-700); color: #fff; }
+  .btn-primary:active { background: var(--purple-900); }
+  .btn-primary:disabled { background: #a99cc4; }
+  .btn-ghost { background: transparent; color: var(--purple-700); border: 1.5px solid var(--purple-700); }
+
+  .msg {
+    display: none; font-size: 13px; padding: 10px 14px;
+    border-radius: 8px; margin-bottom: 14px; line-height: 1.6;
+  }
+  .msg-error { background: #fdeeec; color: var(--red); }
+  .msg-ok { background: #e8f6ef; color: var(--green); }
+
+  /* รายการผลค้นหา */
+  .result-item {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 14px 4px; border-bottom: 1px solid #ece7f4; cursor: pointer;
+  }
+  .result-item:last-child { border-bottom: none; }
+  .r-name { font-size: 15px; font-weight: 500; }
+  .r-detail { font-size: 12.5px; color: var(--muted); margin-top: 2px; }
+  .r-status { font-size: 11.5px; padding: 4px 10px; border-radius: 20px; white-space: nowrap; }
+  .r-wait { background: #fdf3d8; color: var(--amber); }
+  .r-ok { background: #e8f6ef; color: var(--green); }
+
+  /* หน้ายืนยันประเภท */
+  .member-summary {
+    background: var(--purple-900); color: #fff;
+    border-radius: 12px; padding: 16px 18px; margin-bottom: 18px;
+  }
+  .member-summary .m-name { font-size: 17px; font-weight: 600; }
+  .member-summary .m-id { font-size: 12.5px; color: #ffd95c; letter-spacing: 2px; margin: 2px 0 6px; }
+  .member-summary .m-detail { font-size: 12.5px; color: #cabfe0; line-height: 1.7; }
+
+  .type-option {
+    display: flex; align-items: center; gap: 12px;
+    border: 1.5px solid #d5cde6; border-radius: 10px;
+    padding: 13px 14px; margin-bottom: 10px; cursor: pointer;
+    background: #fcfbfe;
+  }
+  .type-option.selected { border-color: var(--purple-700); background: #f0eafa; }
+  .type-option input { width: 18px; height: 18px; accent-color: var(--purple-700); }
+  .type-option .t-label { font-size: 15px; font-weight: 500; }
+  .type-option .t-sub { font-size: 12px; color: var(--muted); }
+
+  .back-link {
+    display: inline-block; font-size: 13.5px; color: var(--purple-700);
+    margin-bottom: 12px; cursor: pointer; text-decoration: underline;
+  }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <img class="mark" src="logo.png" alt="Phitsanulok United">
+  <div>
+    <div class="title">PU Member - หน้าพนักงาน</div>
+    <div class="sub">ยืนยันประเภทสมาชิก</div>
+  </div>
+</div>
+
+<div class="wrap">
+
+  <!-- หน้าใส่รหัสผ่าน -->
+  <div id="screen-login" class="screen active">
+    <div class="panel">
+      <div class="panel-head">เข้าสู่ระบบพนักงาน</div>
+      <div class="msg msg-error" id="login-error"></div>
+      <label for="login-password">รหัสผ่านพนักงาน</label>
+      <input type="password" id="login-password" placeholder="กรอกรหัสผ่าน">
+      <button class="btn btn-primary" onclick="doLogin()">เข้าสู่ระบบ</button>
+    </div>
+  </div>
+
+  <!-- หน้าค้นหาสมาชิก -->
+  <div id="screen-search" class="screen">
+    <div class="panel">
+      <div class="panel-head">ค้นหาสมาชิก</div>
+      <div class="msg msg-error" id="search-error"></div>
+      <label for="search-keyword">เบอร์โทร / รหัสสมาชิก / ชื่อจริง</label>
+      <input type="text" id="search-keyword" placeholder="เช่น 0812345678 หรือ PU0001">
+      <button class="btn btn-primary" id="search-btn" onclick="doSearch()">ค้นหา</button>
+    </div>
+    <div class="panel" id="result-panel" style="display:none">
+      <div class="panel-head">ผลการค้นหา <span id="result-count" style="font-weight:300;font-size:13px;color:var(--muted)"></span></div>
+      <div id="result-list"></div>
+    </div>
+  </div>
+
+  <!-- หน้ายืนยันประเภทสมาชิก -->
+  <div id="screen-confirm" class="screen">
+    <span class="back-link" onclick="showScreen('screen-search')">&larr; กลับไปหน้าค้นหา</span>
+    <div class="member-summary">
+      <div class="m-name" id="c-name">-</div>
+      <div class="m-id" id="c-id">-</div>
+      <div class="m-detail" id="c-detail">-</div>
+    </div>
+    <div class="panel">
+      <div class="panel-head">เลือกประเภทสมาชิก (เลือกได้มากกว่า 1)</div>
+      <div class="msg msg-error" id="confirm-error"></div>
+      <div class="msg msg-ok" id="confirm-ok"></div>
+
+      <div class="type-option" onclick="toggleType(this)">
+        <input type="checkbox" value="แขกโรงแรม" onclick="event.stopPropagation(); syncOption(this)">
+        <div>
+          <div class="t-label">แขกโรงแรม</div>
+          <div class="t-sub">ผู้เข้าพัก Phitsanulok United Hotel</div>
+        </div>
+      </div>
+      <div class="type-option" onclick="toggleType(this)">
+        <input type="checkbox" value="สมาชิกฟิตเนส" onclick="event.stopPropagation(); syncOption(this)">
+        <div>
+          <div class="t-label">สมาชิกฟิตเนส</div>
+          <div class="t-sub">สมาชิกฟิตเนสรายเดือน / ราย 6 เดือน / รายปี</div>
+        </div>
+      </div>
+      <div id="fitness-extra" style="display:none; padding: 2px 2px 4px 30px;">
+        <label for="fitness-package">แพ็กเกจฟิตเนส</label>
+        <select id="fitness-package" onchange="recalcExpiry()">
+          <option value="รายเดือน">รายเดือน</option>
+          <option value="ราย 6 เดือน">ราย 6 เดือน</option>
+          <option value="รายปี">รายปี</option>
+        </select>
+        <label for="fitness-expiry">วันหมดอายุ (ระบบคำนวณให้ แก้ได้)</label>
+        <input type="date" id="fitness-expiry">
+      </div>
+      <div class="type-option" onclick="toggleType(this)">
+        <input type="checkbox" value="ผู้ปกครองอคาเดมี" onclick="event.stopPropagation(); syncOption(this)">
+        <div>
+          <div class="t-label">ผู้ปกครองอคาเดมี</div>
+          <div class="t-sub">ผู้ปกครองนักเรียนฟุตบอลอคาเดมี รายเดือน / ราย 3 เดือน</div>
+        </div>
+      </div>
+      <div id="academy-extra" style="display:none; padding: 2px 2px 4px 30px;">
+        <label for="academy-package">คอร์สอคาเดมี</label>
+        <select id="academy-package" onchange="recalcAcademyExpiry()">
+          <option value="รายเดือน">รายเดือน</option>
+          <option value="ราย 3 เดือน">ราย 3 เดือน</option>
+        </select>
+        <label for="academy-expiry">วันหมดอายุ (ระบบคำนวณให้ แก้ได้)</label>
+        <input type="date" id="academy-expiry">
+      </div>
+
+      <label for="staff-name" style="margin-top:8px">ชื่อพนักงานผู้ยืนยัน</label>
+      <input type="text" id="staff-name" placeholder="เช่น พี่หนึ่ง ฝ่ายต้อนรับ">
+      <button class="btn btn-primary" id="confirm-btn" onclick="doConfirm()">ยืนยันประเภทสมาชิก</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ============================================================
+// ตั้งค่า (แก้บรรทัดนี้ก่อนใช้งาน — ใช้ URL เดียวกับ index.html)
+// ============================================================
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbxLS6whYCUq_t5ceGjAoeC1DCy3JcuWlTbal0yjF4TUQJjodlhGQM4XPaCjR3FcM0-iuQ/exec';
+
+let password = '';        // เก็บในหน่วยความจำระหว่างเปิดหน้าเท่านั้น ปิดหน้าแล้วต้องใส่ใหม่
+let currentMember = null; // สมาชิกที่กำลังยืนยัน
+
+// ---------- ตัวช่วยเรียก Apps Script แบบ JSONP ----------
+function callApi(params) {
+  return new Promise((resolve, reject) => {
+    const cbName = 'cb_' + Date.now() + '_' + Math.floor(Math.random() * 100000);
+    const timer = setTimeout(() => {
+      cleanup();
+      reject(new Error('เชื่อมต่อระบบไม่ได้ กรุณาลองใหม่'));
+    }, 20000);
+
+    function cleanup() {
+      clearTimeout(timer);
+      delete window[cbName];
+      if (script.parentNode) script.parentNode.removeChild(script);
+    }
+
+    window[cbName] = (data) => { cleanup(); resolve(data); };
+
+    const qs = new URLSearchParams({ ...params, callback: cbName }).toString();
+    const script = document.createElement('script');
+    script.src = GAS_URL + '?' + qs;
+    script.onerror = () => { cleanup(); reject(new Error('เชื่อมต่อระบบไม่ได้ กรุณาลองใหม่')); };
+    document.body.appendChild(script);
+  });
+}
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+function showMsg(id, text) {
+  const el = document.getElementById(id);
+  el.textContent = text;
+  el.style.display = 'block';
+}
+function hideMsg(id) { document.getElementById(id).style.display = 'none'; }
+
+// ---------- เข้าสู่ระบบ ----------
+// ตรวจรหัสผ่านกับฝั่ง Apps Script จริง (ลองค้นหาคำทดสอบ 1 ครั้ง)
+async function doLogin() {
+  hideMsg('login-error');
+  const pw = document.getElementById('login-password').value.trim();
+  if (!pw) { showMsg('login-error', 'กรุณากรอกรหัสผ่าน'); return; }
+
+  try {
+    const res = await callApi({ action: 'searchMember', password: pw, keyword: 'PU' });
+    if (res.success === false && res.message === 'รหัสผ่านไม่ถูกต้อง') {
+      showMsg('login-error', 'รหัสผ่านไม่ถูกต้อง');
+      return;
+    }
+    password = pw;
+    showScreen('screen-search');
+  } catch (err) {
+    showMsg('login-error', err.message);
+  }
+}
+
+// ---------- ค้นหาสมาชิก ----------
+async function doSearch() {
+  hideMsg('search-error');
+  const keyword = document.getElementById('search-keyword').value.trim();
+  if (!keyword) { showMsg('search-error', 'กรุณาพิมพ์เบอร์โทร รหัสสมาชิก หรือชื่อ'); return; }
+
+  const btn = document.getElementById('search-btn');
+  btn.disabled = true; btn.textContent = 'กำลังค้นหา...';
+
+  try {
+    const res = await callApi({ action: 'searchMember', password: password, keyword: keyword });
+    if (!res.success) { showMsg('search-error', res.message); return; }
+
+    const list = document.getElementById('result-list');
+    list.innerHTML = '';
+    document.getElementById('result-count').textContent = 'พบ ' + res.results.length + ' รายการ';
+    document.getElementById('result-panel').style.display = 'block';
+
+    if (res.results.length === 0) {
+      list.innerHTML = '<div style="font-size:13.5px;color:var(--muted);padding:8px 4px">ไม่พบสมาชิกที่ตรงกับคำค้นหา ลองค้นด้วยเบอร์โทรเต็ม 10 หลัก</div>';
+      return;
+    }
+
+    res.results.forEach(m => {
+      const item = document.createElement('div');
+      item.className = 'result-item';
+      const isOk = m.status === 'ยืนยันแล้ว';
+      item.innerHTML =
+        '<div><div class="r-name">' + escapeHtml(m.realName) + '</div>' +
+        '<div class="r-detail">' + escapeHtml(m.memberId) + ' · ' + escapeHtml(m.phone) + ' · ' + escapeHtml(m.types) + '</div></div>' +
+        '<div class="r-status ' + (isOk ? 'r-ok' : 'r-wait') + '">' + escapeHtml(m.status) + '</div>';
+      item.onclick = () => openConfirm(m);
+      list.appendChild(item);
+    });
+  } catch (err) {
+    showMsg('search-error', err.message);
+  } finally {
+    btn.disabled = false; btn.textContent = 'ค้นหา';
+  }
+}
+
+function escapeHtml(s) {
+  return String(s || '').replace(/[&<>"']/g, c => ({
+    '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;'
+  })[c]);
+}
+
+// ---------- แพ็กเกจฟิตเนสกับการคำนวณวันหมดอายุ ----------
+const PACKAGE_MONTHS = { 'รายเดือน': 1, 'ราย 6 เดือน': 6, 'รายปี': 12 };
+const ACADEMY_MONTHS = { 'รายเดือน': 1, 'ราย 3 เดือน': 3 };
+
+// คำนวณวันหมดอายุ = วันนี้ + จำนวนเดือนตามแพ็กเกจ (พนักงานแก้ทีหลังได้)
+function recalcExpiry() {
+  const pkg = document.getElementById('fitness-package').value;
+  const d = new Date();
+  d.setMonth(d.getMonth() + (PACKAGE_MONTHS[pkg] || 1));
+  document.getElementById('fitness-expiry').value = toInputDate(d);
+}
+function recalcAcademyExpiry() {
+  const pkg = document.getElementById('academy-package').value;
+  const d = new Date();
+  d.setMonth(d.getMonth() + (ACADEMY_MONTHS[pkg] || 1));
+  document.getElementById('academy-expiry').value = toInputDate(d);
+}
+function toInputDate(d) { // Date -> ปปปป-ดด-วว (รูปแบบของช่องวันที่)
+  return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2);
+}
+function inputToThaiDate(v) { // ปปปป-ดด-วว -> วว/ดด/ปปปป (รูปแบบที่เก็บใน Sheets)
+  const p = v.split('-');
+  return p[2] + '/' + p[1] + '/' + p[0];
+}
+function thaiToInputDate(v) { // วว/ดด/ปปปป -> ปปปป-ดด-วว
+  const p = String(v).split('/');
+  return p.length === 3 ? p[2] + '-' + p[1] + '-' + p[0] : '';
+}
+
+// ---------- เปิดหน้ายืนยันประเภท ----------
+function openConfirm(m) {
+  currentMember = m;
+  hideMsg('confirm-error');
+  hideMsg('confirm-ok');
+
+  document.getElementById('c-name').textContent = m.realName;
+  document.getElementById('c-id').textContent = m.memberId;
+  document.getElementById('c-detail').textContent =
+    'เบอร์ ' + m.phone + ' · สมัครเมื่อ ' + (m.joinDate || '-') +
+    ' · สถานะปัจจุบัน: ' + m.status + ' (' + m.types + ')' +
+    (m.fitnessExpiry ? ' · ฟิตเนสถึง ' + m.fitnessExpiry : '') +
+    (m.academyExpiry ? ' · อคาเดมีถึง ' + m.academyExpiry : '');
+
+  // เติมข้อมูลแพ็กเกจเดิมของสมาชิกคนนี้ (ต้องทำก่อนติ๊ก checkbox
+  // เพราะถ้าช่องวันหมดอายุว่าง ระบบจะคำนวณใหม่ให้ตอนติ๊ก)
+  document.getElementById('fitness-package').value = m.fitnessPackage || 'รายเดือน';
+  document.getElementById('fitness-expiry').value = m.fitnessExpiry ? thaiToInputDate(m.fitnessExpiry) : '';
+  document.getElementById('academy-package').value = m.academyPackage || 'รายเดือน';
+  document.getElementById('academy-expiry').value = m.academyExpiry ? thaiToInputDate(m.academyExpiry) : '';
+
+  // ติ๊กประเภทเดิมของสมาชิกไว้ให้ก่อน (ถ้าเคยยืนยันแล้ว)
+  const currentTypes = String(m.types || '').split(',').map(t => t.trim());
+  document.querySelectorAll('#screen-confirm input[type="checkbox"]').forEach(cb => {
+    cb.checked = currentTypes.indexOf(cb.value) !== -1;
+    syncOption(cb);
+  });
+
+  showScreen('screen-confirm');
+}
+
+// ---------- ติ๊กเลือกประเภท ----------
+function toggleType(box) {
+  const cb = box.querySelector('input[type="checkbox"]');
+  cb.checked = !cb.checked;
+  syncOption(cb);
+}
+function syncOption(cb) {
+  cb.closest('.type-option').classList.toggle('selected', cb.checked);
+  // ถ้าติ๊ก/เอาออก "สมาชิกฟิตเนส" ให้แสดง/ซ่อนช่องแพ็กเกจ
+  if (cb.value === 'สมาชิกฟิตเนส') {
+    document.getElementById('fitness-extra').style.display = cb.checked ? 'block' : 'none';
+    if (cb.checked && !document.getElementById('fitness-expiry').value) recalcExpiry();
+  }
+  // ถ้าติ๊ก/เอาออก "ผู้ปกครองอคาเดมี" หลักเดียวกัน
+  if (cb.value === 'ผู้ปกครองอคาเดมี') {
+    document.getElementById('academy-extra').style.display = cb.checked ? 'block' : 'none';
+    if (cb.checked && !document.getElementById('academy-expiry').value) recalcAcademyExpiry();
+  }
+}
+
+// ---------- ส่งยืนยันประเภท ----------
+async function doConfirm() {
+  hideMsg('confirm-error');
+  hideMsg('confirm-ok');
+
+  const selected = Array.from(document.querySelectorAll('#screen-confirm input[type="checkbox"]:checked'))
+    .map(cb => cb.value);
+  const staffName = document.getElementById('staff-name').value.trim();
+
+  if (selected.length === 0) { showMsg('confirm-error', 'กรุณาเลือกประเภทสมาชิกอย่างน้อย 1 ประเภท'); return; }
+  if (!staffName) { showMsg('confirm-error', 'กรุณากรอกชื่อพนักงานผู้ยืนยัน'); return; }
+
+  // เตรียมข้อมูลส่ง ถ้าเป็นสมาชิกฟิตเนสต้องมีแพ็กเกจ + วันหมดอายุเสมอ
+  const params = {
+    action: 'confirmType',
+    password: password,
+    memberId: currentMember.memberId,
+    types: selected.join(', '),
+    staffName: staffName
+  };
+  if (selected.indexOf('สมาชิกฟิตเนส') !== -1) {
+    const expiry = document.getElementById('fitness-expiry').value;
+    if (!expiry) { showMsg('confirm-error', 'กรุณาระบุวันหมดอายุฟิตเนส'); return; }
+    params.fitnessPackage = document.getElementById('fitness-package').value;
+    params.fitnessExpiry = inputToThaiDate(expiry);
+  }
+  if (selected.indexOf('ผู้ปกครองอคาเดมี') !== -1) {
+    const aExpiry = document.getElementById('academy-expiry').value;
+    if (!aExpiry) { showMsg('confirm-error', 'กรุณาระบุวันหมดอายุคอร์สอคาเดมี'); return; }
+    params.academyPackage = document.getElementById('academy-package').value;
+    params.academyExpiry = inputToThaiDate(aExpiry);
+  }
+
+  const btn = document.getElementById('confirm-btn');
+  btn.disabled = true; btn.textContent = 'กำลังบันทึก...';
+
+  try {
+    const res = await callApi(params);
+    if (res.success) {
+      let okMsg = 'ยืนยันสำเร็จ: ' + res.member.realName + ' เป็น ' + res.member.types;
+      if (res.member.fitnessExpiry) okMsg += ' (ฟิตเนสใช้ได้ถึง ' + res.member.fitnessExpiry + ')';
+      if (res.member.academyExpiry) okMsg += ' (อคาเดมีใช้ได้ถึง ' + res.member.academyExpiry + ')';
+      okMsg += ' แจ้งลูกค้ากดรีเฟรชบัตรได้เลย';
+      showMsg('confirm-ok', okMsg);
+      currentMember = res.member;
+    } else {
+      showMsg('confirm-error', res.message || 'บันทึกไม่สำเร็จ');
+    }
+  } catch (err) {
+    showMsg('confirm-error', err.message);
+  } finally {
+    btn.disabled = false; btn.textContent = 'ยืนยันประเภทสมาชิก';
+  }
+}
+
+// กด Enter ในช่องรหัสผ่านหรือช่องค้นหา = กดปุ่มทันที
+document.getElementById('login-password').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+document.getElementById('search-keyword').addEventListener('keydown', e => { if (e.key === 'Enter') doSearch(); });
+</script>
+</body>
+</html>
